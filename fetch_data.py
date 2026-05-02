@@ -2,10 +2,11 @@ import yfinance as yf
 import pandas as pd
 import json
 import numpy as np
+from datetime import datetime
 
 # Configuration
 START_DATE = '2000-01-01'
-END_DATE = '2026-05-02'
+END_DATE = datetime.now().strftime('%Y-%m-%d')
 
 ETFS = ['VOO', 'SCHD', 'SPY', 'QQQ', 'QLD', 'TQQQ', 'SOXL']
 INDICES = ['^GSPC', '^DJI', '^NDX', '^SOX']
