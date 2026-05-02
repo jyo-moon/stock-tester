@@ -68,8 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
 function showError(msg) {
     const errorBox = document.getElementById('errorBox');
     if(msg) {
-        errorBox.innerText = msg;
+        errorBox.innerText = msg + ' (클릭하여 닫기)';
         errorBox.style.display = 'block';
+        
+        // Hide on click
+        errorBox.onclick = () => {
+            errorBox.style.display = 'none';
+        };
     } else {
         errorBox.style.display = 'none';
     }
@@ -124,10 +129,15 @@ function updatePortfolioWeights() {
 
 function runSimulation() {
     showError(null);
+    updatePortfolioWeights(); // Ensure weights are latest
 
-    const totalW = Object.values(portfolioWeights).reduce((a,b)=>a+b, 0);
-    if(totalW !== 100) {
-        showError('포트폴리오 비중을 100%로 맞춰주세요. (현재 합계: ' + totalW + '%)');
+    let totalW = 0;
+    ETFS.forEach(etf => {
+        totalW += portfolioWeights[etf];
+    });
+
+    if(Math.round(totalW) !== 100) {
+        showError('포트폴리오 비중의 합을 100%로 맞춰주세요. (현재 합계: ' + Math.round(totalW) + '%)');
         return;
     }
 
