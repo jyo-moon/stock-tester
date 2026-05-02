@@ -1,7 +1,9 @@
-const ETFS = ['VOO', 'SCHD', 'SPY', 'QQQ', 'QLD', 'TQQQ', 'SOXL'];
+const ETFS = ['CASH', 'GLD', 'VOO', 'SCHD', 'SPY', 'QQQ', 'QLD', 'TQQQ', 'SOXL'];
 
 // Approximate Annual Dividend Yields
 const DIVIDEND_YIELD = {
+    'CASH': 0.0,
+    'GLD': 0.0,
     'VOO': 0.015,
     'SCHD': 0.035,
     'SPY': 0.015,
@@ -86,8 +88,9 @@ function initPortfolioInputs() {
     ETFS.forEach(etf => {
         const div = document.createElement('div');
         div.className = 'portfolio-item';
+        const displayName = etf === 'CASH' ? '현금 ($)' : etf;
         div.innerHTML = `
-            <span>${etf}</span>
+            <span>${displayName}</span>
             <div class="range-container">
                 <input type="range" id="range-${etf}" min="0" max="100" value="0">
                 <input type="number" id="weight-${etf}" class="weight-input" min="0" max="100" value="0">
@@ -153,6 +156,7 @@ function runSimulation() {
     const dcaAmount = parseFloat(dcaAmountStr) || 0;
     const dcaWeekday = parseInt(document.getElementById('dcaWeekday').value);
     const dcaMonthDay = parseInt(document.getElementById('dcaMonthDay').value);
+    const cashInterestRate = parseFloat(document.getElementById('cashInterestRate').value) || 0;
 
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
@@ -181,6 +185,9 @@ function runSimulation() {
     let shares = {};
     let lastPrice = {}; // cache for 0 or missing data
     ETFS.forEach(e => { shares[e] = 0; lastPrice[e] = 0; });
+    
+    // Initialize CASH price at 1.0 USD
+    lastPrice['CASH'] = 1.0;
     
     // Result arrays for chart
     let chartLabels = [];
@@ -223,7 +230,14 @@ function runSimulation() {
 
         // update price cache
         ETFS.forEach(etf => {
-            if(data[etf] && data[etf] > 0) {
+            if(etf === 'CASH') {
+                // Cash interest growth based on days since last sim date
+                if(i > 0) {
+                    const daysDiff = (new Date(simDates[i]) - new Date(simDates[i-1])) / (1000 * 60 * 60 * 24);
+                    const dailyRate = (cashInterestRate / 100) / 365;
+                    lastPrice['CASH'] = lastPrice['CASH'] * (1 + (dailyRate * daysDiff));
+                }
+            } else if(data[etf] && data[etf] > 0) {
                 lastPrice[etf] = data[etf];
             }
         });
