@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>미국 주식 포트폴리오 테스터</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Data -->
+    <script src="data.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1>미국 주식 포트폴리오 테스터</h1>
+            <p>2000.01 - 2026.05 미국 주식 시뮬레이터</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="card input-section">
+                <h2>투자 설정</h2>
+                
+                <div id="errorBox" class="error-box" style="display: none; color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid rgba(239, 68, 68, 0.3);"></div>
+
+                <div class="form-group">
+                    <label>초기 투자금</label>
+                    <div class="input-with-hint">
+                        <input type="text" id="initialAmount" value="0">
+                        <span class="hint-text" id="initialAmountHint">0원</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>적립 주기</label>
+                    <select id="dcaFrequency">
+                        <option value="none">안 함 (거치식)</option>
+                        <option value="daily">매일</option>
+                        <option value="weekly">매주</option>
+                        <option value="monthly" selected>매월</option>
+                    </select>
+                </div>
+
+                <div id="dcaSettings" style="display: block;">
+                    <div class="form-group">
+                        <label>적립 금액</label>
+                        <div class="input-with-hint">
+                            <input type="text" id="dcaAmount" value="1,000,000">
+                            <span class="hint-text" id="dcaAmountHint">100만 원</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" id="dcaWeeklySetting" style="display: none;">
+                        <label>적립 요일</label>
+                        <select id="dcaWeekday">
+                            <option value="1">월요일</option>
+                            <option value="2">화요일</option>
+                            <option value="3">수요일</option>
+                            <option value="4">목요일</option>
+                            <option value="5">금요일</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="dcaMonthlySetting" style="display: block;">
+                        <label>적립일</label>
+                        <select id="dcaMonthDay">
+                            <option value="1">1일</option>
+                            <option value="5">5일</option>
+                            <option value="10">10일</option>
+                            <option value="15">15일</option>
+                            <option value="20">20일</option>
+                            <option value="25">25일</option>
+                            <option value="28">28일</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>시작일</label>
+                    <input type="date" id="startDate" value="2000-01-01" min="2000-01-01" max="2026-05-01">
+                </div>
+                
+                <div class="form-group">
+                    <label>종료일</label>
+                    <input type="date" id="endDate" value="2026-05-01" min="2000-01-02" max="2026-05-01">
+                </div>
+
+                <div class="divider"></div>
+                
+                <h3>포트폴리오 비중 (%)</h3>
+                <p class="sub-text">합계: <span id="totalWeight">0</span>%</p>
+                <div class="portfolio-grid" id="portfolioInputs">
+                    <!-- JavaScript will populate this -->
+                </div>
+
+                <div class="divider"></div>
+
+                <h3>고급 옵션</h3>
+                <div class="options-grid">
+                    <label class="toggle-label">
+                        <span class="toggle-text">배당 재투자 (DRIP)</span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="dripToggle" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </label>
+                    
+                    <label class="toggle-label">
+                        <span class="toggle-text">세금/수수료 적용</span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="taxToggle">
+                            <span class="slider"></span>
+                        </div>
+                    </label>
+
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>리밸런싱 주기</label>
+                        <select id="rebalancePeriod">
+                            <option value="none">안 함 (Buy & Hold)</option>
+                            <option value="monthly">매월</option>
+                            <option value="quarterly">매분기</option>
+                            <option value="yearly">매년</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="primary-btn" id="runBtn">시뮬레이션 실행</button>
+            </section>
+
+            <!-- Results Section -->
+            <section class="card results-section" id="resultsSection" style="display: none;">
+                <h2>결과 요약</h2>
+                
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <span class="summary-label">총 투자금</span>
+                        <span class="summary-value" id="resInvested">0원</span>
+                    </div>
+                    <div class="summary-card highlight">
+                        <span class="summary-label">최종 자산</span>
+                        <span class="summary-value" id="resFinal">0원</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-label">수익률</span>
+                        <span class="summary-value" id="resReturn">0%</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-label">연평균 (CAGR)</span>
+                        <span class="summary-value" id="resCagr">0%</span>
+                    </div>
+                    <div class="summary-card danger">
+                        <span class="summary-label">최대 낙폭 (MDD)</span>
+                        <span class="summary-value" id="resMdd">0%</span>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="resultChart"></canvas>
+                </div>
+
+                <div class="divider"></div>
+                
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>연도별 요약</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="dataTable">
+                            <thead>
+                                <tr>
+                                    <th>연도</th>
+                                    <th>총 투자금</th>
+                                    <th>최종 자산</th>
+                                    <th>수익률</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody">
+                                <!-- JS will populate this -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>© 2026 미국 주식 포트폴리오 테스터</p>
+            <p>만든이: j.moon</p>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
