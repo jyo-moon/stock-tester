@@ -13,10 +13,8 @@ const DIVIDEND_YIELD = {
     'SOXL': 0.0
 };
 
-// State
-let portfolioWeights = {
-    'VOO': 0, 'SCHD': 0, 'SPY': 0, 'QQQ': 0, 'QLD': 0, 'TQQQ': 0, 'SOXL': 0
-};
+let portfolioWeights = {};
+ETFS.forEach(etf => portfolioWeights[etf] = 0);
 let chartInstance = null;
 
 // Initialize
@@ -181,10 +179,14 @@ function runSimulation() {
     // Initialize tracking
     let totalInvestedKRW = 0;
     
-    // shares tracked as object { VOO: 10, SCHD: 20 ... }
     let shares = {};
     let lastPrice = {}; // cache for 0 or missing data
-    ETFS.forEach(e => { shares[e] = 0; lastPrice[e] = 0; });
+    let uninvestedUSD = {}; // per ETF uninvested amount due to missing price
+    ETFS.forEach(e => { 
+        shares[e] = 0; 
+        lastPrice[e] = 0; 
+        uninvestedUSD[e] = 0;
+    });
     
     // Initialize CASH price at 1.0 USD
     lastPrice['CASH'] = 1.0;
@@ -269,16 +271,22 @@ function runSimulation() {
             totalInvestedKRW += buyAmountKRW;
             const buyAmountUSD = buyAmountKRW / krwX;
             
-            // buy ETFs
+            // distribute buy amount to each ETF's uninvested bucket
             ETFS.forEach(etf => {
                 const w = portfolioWeights[etf] / 100;
-                if(w > 0 && lastPrice[etf] > 0) {
-                    const price = lastPrice[etf];
-                    const usdToBuy = buyAmountUSD * w;
-                    shares[etf] += (usdToBuy / price);
+                if(w > 0) {
+                    uninvestedUSD[etf] += (buyAmountUSD * w);
                 }
             });
         }
+
+        // Try to buy with uninvested funds if price is now available
+        ETFS.forEach(etf => {
+            if(uninvestedUSD[etf] > 0 && lastPrice[etf] > 0) {
+                shares[etf] += (uninvestedUSD[etf] / lastPrice[etf]);
+                uninvestedUSD[etf] = 0;
+            }
+        });
 
         // --- Rebalancing Logic ---
         let doRebalance = false;
@@ -319,6 +327,10 @@ function runSimulation() {
                 }
 
                 dailyTotalUSD += shares[etf] * price;
+            }
+            // Also include uninvested cash in total value (it's held as USD cash)
+            if(uninvestedUSD[etf] > 0) {
+                dailyTotalUSD += uninvestedUSD[etf];
             }
         });
 
