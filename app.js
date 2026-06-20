@@ -1,4 +1,4 @@
-const ETFS = ['CASH', 'GLD', 'VOO', 'SCHD', 'SPY', 'QQQ', 'QLD', 'TQQQ', 'SOXL'];
+const ETFS = ['CASH', 'GLD', 'VOO', 'SCHD', 'SPY', 'QQQ', 'QLD', 'TQQQ', 'SOXL', '472160.KS'];
 
 // Approximate Annual Dividend Yields
 const DIVIDEND_YIELD = {
@@ -10,7 +10,8 @@ const DIVIDEND_YIELD = {
     'QQQ': 0.006,
     'QLD': 0.0,
     'TQQQ': 0.0,
-    'SOXL': 0.0
+    'SOXL': 0.0,
+    '472160.KS': 0.002
 };
 
 let portfolioWeights = {};
@@ -29,6 +30,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('weight-QQQ').value = 50;
     document.getElementById('range-QQQ').value = 50;
     updatePortfolioWeights();
+
+    // Set dynamic date ranges based on available marketData
+    if (typeof marketData !== 'undefined') {
+        const allDates = Object.keys(marketData).sort();
+        if (allDates.length > 0) {
+            const minDate = allDates[0];
+            const maxDate = allDates[allDates.length - 1];
+            
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            
+            startDateInput.min = minDate;
+            startDateInput.max = maxDate;
+            startDateInput.value = allDates.includes('2000-01-01') ? '2000-01-01' : minDate;
+            
+            endDateInput.min = minDate;
+            endDateInput.max = maxDate;
+            endDateInput.value = maxDate;
+            
+            const subHeader = document.querySelector('.header p');
+            if (subHeader) {
+                const startYearMonth = minDate.substring(0, 7).replace('-', '.');
+                const endYearMonth = maxDate.substring(0, 7).replace('-', '.');
+                subHeader.innerText = `${startYearMonth} - ${endYearMonth} 미국 주식 시뮬레이터`;
+            }
+        }
+    }
 
     // Currency inputs setup
     setupCurrencyInput('initialAmount', 'initialAmountHint');
@@ -86,7 +114,8 @@ function initPortfolioInputs() {
     ETFS.forEach(etf => {
         const div = document.createElement('div');
         div.className = 'portfolio-item';
-        const displayName = etf === 'CASH' ? '현금 ($)' : etf;
+        const displayName = etf === 'CASH' ? '현금 ($)' : 
+                            etf === '472160.KS' ? 'TIGER 미국테크TOP10 INDXX(H)' : etf;
         div.innerHTML = `
             <span>${displayName}</span>
             <div class="range-container">
